@@ -1,0 +1,145 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  password      String?
+  image         String?
+  emailVerified Boolean   @default(false)
+  role          String    @default("user") // user, admin
+  plan          String    @default("free") // free, pro, enterprise
+  storageUsed   Int       @default(0) // in bytes
+  storageLimit  Int       @default(104857600) // 100MB default
+  conversions   Conversion[]
+  favorites     Favorite[]
+  notifications Notification[]
+  settings      Settings?
+  accounts      Account[]
+  sessions      Session[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  providerType      String
+  providerId        String
+  providerAccountId String
+  refreshToken      String?
+  accessToken       String?
+  expiresAt         Int?
+  tokenType         String?
+  scope             String?
+  idToken           String?
+  sessionState      String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  sessionToken String   @unique
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  createdAt  DateTime @default(now())
+}
+
+model Conversion {
+  id           String           @id @default(cuid())
+  userId       String
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inputFormat  String
+  outputFormat String
+  status       String           @default("pending") // pending, processing, completed, failed
+  fileSize     Int              @default(0)
+  outputSize   Int              @default(0)
+  toolType     String           @default("convert") // convert, pdf, image, video
+  files        ConversionFile[]
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+}
+
+model ConversionFile {
+  id           String     @id @default(cuid())
+  conversionId String
+  conversion   Conversion @relation(fields: [conversionId], references: [id], onDelete: Cascade)
+  originalName String
+  fileName     String
+  fileUrl      String?
+  fileSize     Int        @default(0)
+  outputUrl    String?
+  outputSize   Int        @default(0)
+  status       String     @default("pending")
+  createdAt    DateTime   @default(now())
+}
+
+model Favorite {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inputFormat String
+  outputFormat String
+  toolType    String   @default("convert")
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, inputFormat, outputFormat])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      String   @default("info") // info, success, warning, error
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Settings {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  theme             String   @default("system") // light, dark, system
+  language          String   @default("en") // en, fr
+  emailNotifications Boolean @default(true)
+  defaultOutputFormat String?
+  compressionLevel  Int      @default(6) // 1-9
+  autoDownload      Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Newsletter {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model Contact {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  subject   String
+  message   String
+  createdAt DateTime @default(now())
+}
