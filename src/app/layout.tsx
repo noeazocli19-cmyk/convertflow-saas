@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "ConvertFlow" }],
   icons: {
-    icon: "/logo.svg",
+    icon: "/image.png",
   },
   openGraph: {
     title: "ConvertFlow - Convertissez tous vos fichiers",
